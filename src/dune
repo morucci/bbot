@@ -1,0 +1,20 @@
+(rule
+ (targets binance_j.ml binance_j.mli)
+ (deps binance.atd)
+ (mode fallback)
+ (action
+  (run atdgen -j %{deps})))
+
+(rule
+ (targets binance_t.ml binance_t.mli)
+ (deps binance.atd)
+ (mode fallback)
+ (action
+  (run atdgen -t %{deps})))
+
+(executable
+ (name bbot)
+ (preprocess
+  (pps ppx_let))
+ (modules bbot binance_t binance_j)
+ (libraries core async yojson uri textwrap cohttp-async atdgen-runtime))

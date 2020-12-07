@@ -1,0 +1,2 @@
+type kline = (int * string * string * string * string * string * int * string * int * string * string * string)
+type klines = kline list
