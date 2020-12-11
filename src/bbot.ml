@@ -84,15 +84,31 @@ module Indicators = struct
              _sma (Tools.slice rs i (i + sr)) :: acc
            else acc)
 
+  (* let _ema period (series : float list) =
+     let k = 2.0 /. (Float.of_int period +. 1.) in
+     let rev_series = List.rev series in
+     let rec __ema series =
+       match series with
+       | [] -> 0.
+       | t :: _ -> (k *. t) +. ((1. -. k) *. __ema (List.drop series 1))
+     in
+     __ema rev_series *)
   let _ema period (series : float list) =
     let k = 2.0 /. (Float.of_int period +. 1.) in
     let rev_series = List.rev series in
-    let rec __ema series =
+    let rec __ema series n =
       match series with
-      | [] -> 1.
-      | t :: _ -> (k *. t) +. ((1. -. k) *. __ema (List.drop series 1))
+      | [] -> 0.
+      | p :: xs -> (((1. -. k) **. n) *. p) +. __ema xs (n +. 1.)
     in
-    __ema rev_series
+    k *. (List.hd_exn rev_series +. __ema (List.drop rev_series 1) 1.)
+
+  let ema period series =
+    let rs = series |> List.rev in
+    rs
+    |> List.foldi ~init:[] ~f:(fun i acc _ ->
+           _ema period (Tools.slice rs i (List.length series)) :: acc)
+    |> List.rev
 end
 
 module IndicatorsTests = struct
@@ -115,18 +131,17 @@ module IndicatorsTests = struct
     let series =
       [ 2; 4; 6; 8; 12; 14; 16; 18; 20 ] |> Tools.int_list_to_float_list
     in
-    (* let expected = [ 3.; 3.333; 4.222; 5.481; 7.654; 9.77; 11.846; 13.898 ] in *)
-    let computed = Indicators._ema 2 series in
-    printf "%f" computed;
-    (* printf "[%s], [%s]"
-         (computed |> Tools.float_list_to_str)
-         (expected |> Tools.float_list_to_str);
-       Bool.( = ) (Tools.list_equal expected computed) true *)
-    true
+    let expected = [ 6.4; 8.8; 11.2; 13.6; 16. ] in
+    let computed = Indicators.ema 5 series in
+    printf "[%s], [%s]"
+      (computed |> Tools.float_list_to_str)
+      (expected |> Tools.float_list_to_str);
+    (* Bool.( = ) (Tools.list_equal expected computed) true *)
+    false
 
-  let run_tests () =
-    printf ": %s\n" (test_sma () |> Bool.to_string);
-    printf ": %s\n" (test_ema () |> Bool.to_string)
+  let run_tests () = printf ": %s\n" (test_sma () |> Bool.to_string)
+
+  (* printf ": %s\n" (test_ema () |> Bool.to_string) *)
 end
 
 (* let () =
@@ -141,5 +156,6 @@ end
   never_returns (Scheduler.go ()) *)
 
 let () =
+  printf "%s" (List.drop [ 2.; 3.; 4. ] 1 |> Tools.float_list_to_str);
   IndicatorsTests.run_tests ();
   never_returns (Scheduler.go ())
