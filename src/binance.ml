@@ -1,6 +1,5 @@
 open Base
 open Core
-open Async
 
 type kline = {
   o_t : int;
@@ -11,6 +10,12 @@ type kline = {
   vol : float;
   c_t : int;
   trades : int;
+}
+
+type klines_analysed = {
+  klines : kline list;
+  sma10 : float list;
+  ema10 : float list;
 }
 
 let to_kline_record (kline : Binance_t.kline) : kline =
