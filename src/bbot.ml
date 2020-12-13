@@ -9,7 +9,7 @@ let run_ta_analysys (klines : Binance.kline list) : Binance.klines_analysed =
 
 let main () =
   let url =
-    "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m"
+    "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h"
   in
   Api.get_with_timeout url Binance_j.klines_of_string ~timeout:5.0
   >>= fun res ->
@@ -22,11 +22,12 @@ let main () =
   >>= fun res ->
   res
   |> Result.bind ~f:(fun krs ->
-         Ok (krs |> List.map ~f:(fun kr -> Binance.(kr.c_p))))
+         Ok
+           (let krsa = krs |> run_ta_analysys in
+            Binance.klines_analysed_to_string "BTCUSD" "1h" krsa 4))
   |> return
   >>| function
-  | Ok flist ->
-      printf "%s" (flist |> Ta.Indicators.ema 10 |> Tools.float_list_to_str)
+  | Ok str -> printf "%s" str
   | Error err -> printf "Error: %s" err
 
 let () =

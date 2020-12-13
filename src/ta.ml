@@ -31,9 +31,9 @@ module Indicators = struct
   let macd_12_26_9 series =
     let ema_12 = ema 12 series in
     let ema_26 = ema 26 series in
-    let ema_9 = ema 9 series in
     let macd_line = List.map2_exn ema_12 ema_26 ~f:(fun s l -> s -. l) in
-    { macd_line; signal_line = ema_9 }
+    let signal_line = ema 9 macd_line in
+    { macd_line; signal_line }
 end
 
 module IndicatorsTests = struct
