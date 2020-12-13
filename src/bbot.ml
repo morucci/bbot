@@ -4,9 +4,8 @@ open Async
 
 let run_ta_analysys (klines : Binance.kline list) : Binance.klines_analysed =
   let closed_prices = klines |> List.map ~f:(fun kr -> Binance.(kr.c_p)) in
-  let sma10 = closed_prices |> Ta.Indicators.sma 10 in
-  let ema10 = closed_prices |> Ta.Indicators.ema 10 in
-  Binance.{ klines; sma10; ema10 }
+  let macd_12_26_9 = closed_prices |> Ta.Indicators.macd_12_26_9 in
+  Binance.{ klines; macd_12_26_9 }
 
 let main () =
   let url =

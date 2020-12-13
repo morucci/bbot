@@ -14,8 +14,7 @@ type kline = {
 
 type klines_analysed = {
   klines : kline list;
-  sma10 : float list;
-  ema10 : float list;
+  macd_12_26_9 : Ta.Indicators.macd;
 }
 
 let to_kline_record (kline : Binance_t.kline) : kline =

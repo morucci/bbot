@@ -3,6 +3,8 @@ open Core
 open Async
 
 module Indicators = struct
+  type macd = { macd_line : float list; signal_line : float list }
+
   let sma period series =
     let _sma series =
       series |> List.fold ~init:0. ~f:(fun acc e -> acc +. e) |> fun v ->
@@ -25,6 +27,13 @@ module Indicators = struct
     rs
     |> List.foldi ~init:[] ~f:(fun i acc _ ->
            _ema period (Tools.slice rs i (List.length series)) :: acc)
+
+  let macd_12_26_9 series =
+    let ema_12 = ema 12 series in
+    let ema_26 = ema 26 series in
+    let ema_9 = ema 9 series in
+    let macd_line = List.map2_exn ema_12 ema_26 ~f:(fun s l -> s -. l) in
+    { macd_line; signal_line = ema_9 }
 end
 
 module IndicatorsTests = struct
@@ -64,7 +73,30 @@ module IndicatorsTests = struct
     in
     test "Test EMA" (fun () -> Indicators.ema 2 series) expected
 
+  let test_macd () : bool =
+    (* https://goodcalculators.com/exponential-moving-average-calculator/ *)
+    let series =
+      [ 2; 4; 6; 8; 12; 14; 16; 18; 20 ] |> Tools.int_list_to_float_list
+    in
+    let expected_macd_line =
+      [
+        0.;
+        0.15954415954415957;
+        0.44226913742583296;
+        0.81828136639380089;
+        1.4226410173927064;
+        2.0394738947577444;
+        2.659049808422572;
+        3.2737141304286608;
+        3.8775256176935038;
+      ]
+    in
+    test "Test MACD (macd line)"
+      (fun () -> (Indicators.macd_12_26_9 series).macd_line)
+      expected_macd_line
+
   let run_tests () =
     printf ": %s\n" (test_sma () |> Bool.to_string);
-    printf ": %s\n" (test_ema () |> Bool.to_string)
+    printf ": %s\n" (test_ema () |> Bool.to_string);
+    printf ": %s\n" (test_macd () |> Bool.to_string)
 end
