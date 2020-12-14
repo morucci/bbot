@@ -31,7 +31,9 @@ module Indicators = struct
   let macd_12_26_9 series =
     let ema_12 = ema 12 series in
     let ema_26 = ema 26 series in
+    (* macd_line above 0 tells a good momentum *)
     let macd_line = List.map2_exn ema_12 ema_26 ~f:(fun s l -> s -. l) in
+    (* a signal line that cross over the macd_line is a buy sigal *)
     let signal_line = ema 9 macd_line in
     { macd_line; signal_line }
 end
