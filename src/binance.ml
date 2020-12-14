@@ -76,6 +76,7 @@ let klines_analysed_to_string pair period klines_analysed depth : string =
   let s = (klines_analysed.klines |> List.length) - depth in
   let n = klines_analysed.klines |> List.length in
   let last_klines = Tools.slice klines_analysed.klines s n in
+  let last_macd = Tools.slice klines_analysed.macd.macd_line s n in
   let last_macd_diff = Tools.slice klines_analysed.macd_diff s n in
   let str =
     last_klines
@@ -86,6 +87,8 @@ let klines_analysed_to_string pair period klines_analysed depth : string =
            ^ (depth - i |> Int.to_string)
            ^ ":" ^ " P:" ^ (e.c_p |> float_to_string) ^ " MACD/DIFF: "
            ^ (List.nth_exn last_macd_diff i |> float_to_string)
+           ^ " MACD/L: "
+           ^ (List.nth_exn last_macd i |> float_to_string)
            ^ "]")
   in
   str ^ " [MACD/CS:"
