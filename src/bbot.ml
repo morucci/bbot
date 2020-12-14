@@ -22,7 +22,7 @@ let main () =
             Binance.klines_analysed_to_string "BTCUSD" "1h" krsa 4))
   |> return
   >>| function
-  | Ok str -> printf "%s" str
+  | Ok str -> printf "%s\n" str
   | Error err -> printf "Error: %s" err
 
 let () =
