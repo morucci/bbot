@@ -22,15 +22,21 @@ let get_klines_to_analysed_str (pair : string) (interval : string) =
   >>= fun res -> res |> klines_req_to_analysed_str pair interval
 
 let get_pair_to_analysed_str (pair : string) =
-  let d1 = get_klines_to_analysed_str pair "1h" in
-  let d2 = get_klines_to_analysed_str pair "1d" in
+  let d1 = get_klines_to_analysed_str pair "1d" in
+  let d2 = get_klines_to_analysed_str pair "1h" in
   Deferred.all [ d1; d2 ]
   >>| List.map ~f:(function
-        | Ok str -> sprintf "%s\n" str
+        | Ok str -> sprintf "%s" str
         | Error err -> sprintf "Error: %s" err)
-  >>| List.iter ~f:(fun str -> printf "%s" str)
+  >>| String.concat ~sep:"\n"
 
-let main () = get_pair_to_analysed_str "BTCUSDT"
+let get_pairs_to_analysed_str () =
+  let d1 = get_pair_to_analysed_str "BTCUSDT" in
+  let d2 = get_pair_to_analysed_str "ETHUSDT" in
+  let d3 = get_pair_to_analysed_str "BNBUSDT" in
+  Deferred.all [ d1; d2; d3 ] >>| List.iter ~f:(fun str -> printf "%s\n\n" str)
+
+let main () = get_pairs_to_analysed_str ()
 
 let () =
   (* Ta.IndicatorsTests.run_tests (); *)
