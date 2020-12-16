@@ -80,7 +80,7 @@ let is_macd_ok klines_analysed : bool =
 
 let bool_to_pov = function true -> "GOOD" | false -> "BAD"
 
-let klines_analysed_to_string pair period klines_analysed depth : string =
+let klines_analysed_to_string pair period depth klines_analysed : string =
   let s = (klines_analysed.klines |> List.length) - depth in
   let n = klines_analysed.klines |> List.length in
   let last_klines = Tools.slice klines_analysed.klines s n in

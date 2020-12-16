@@ -2,28 +2,35 @@ open Core
 open Base
 open Async
 
-let main () =
-  let url =
-    "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h"
-  in
-  Api.get_with_timeout url Binance_j.klines_of_string ~timeout:5.0
-  >>= fun res ->
+let klines_req_to_analysed_str (pair : string) (interval : string)
+    (res : (Binance_t.kline list, string) Result.t) =
   res
   |> Result.bind ~f:(fun klines ->
          Ok
            ( klines
-           |> List.map ~f:(fun kline -> kline |> Binance.to_kline_record) ))
+           |> List.map ~f:(fun kline -> kline |> Binance.to_kline_record)
+           |> Binance.run_ta_analysys
+           |> Binance.klines_analysed_to_string pair interval 4 ))
   |> return
-  >>= fun res ->
-  res
-  |> Result.bind ~f:(fun krs ->
-         Ok
-           (let krsa = krs |> Binance.run_ta_analysys in
-            Binance.klines_analysed_to_string "BTCUSD" "1h" krsa 4))
-  |> return
-  >>| function
-  | Ok str -> printf "%s\n" str
-  | Error err -> printf "Error: %s" err
+
+let get_klines_to_analysed_str (pair : string) (interval : string) =
+  let url =
+    "https://api.binance.com/api/v3/klines?symbol=" ^ pair ^ "&interval="
+    ^ interval
+  in
+  Api.get_with_timeout url Binance_j.klines_of_string ~timeout:10.0
+  >>= fun res -> res |> klines_req_to_analysed_str pair interval
+
+let get_pair_to_analysed_str (pair : string) =
+  let d1 = get_klines_to_analysed_str pair "1h" in
+  let d2 = get_klines_to_analysed_str pair "1d" in
+  Deferred.all [ d1; d2 ]
+  >>| List.map ~f:(function
+        | Ok str -> sprintf "%s\n" str
+        | Error err -> sprintf "Error: %s" err)
+  >>| List.iter ~f:(fun str -> printf "%s" str)
+
+let main () = get_pair_to_analysed_str "BTCUSDT"
 
 let () =
   (* Ta.IndicatorsTests.run_tests (); *)
