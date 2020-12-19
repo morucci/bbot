@@ -31,10 +31,10 @@ let get_pair_to_analysed_str (pair : string) =
   >>| String.concat ~sep:"\n"
 
 let get_pairs_to_analysed_str () =
-  let d1 = get_pair_to_analysed_str "BTCUSDT" in
-  let d2 = get_pair_to_analysed_str "ETHUSDT" in
-  let d3 = get_pair_to_analysed_str "BNBUSDT" in
-  Deferred.all [ d1; d2; d3 ] >>| List.iter ~f:(fun str -> printf "%s\n\n" str)
+  [ "BTCUSDT"; "ETHUSDT"; "BNBUSDT"; "XRPUSDT" ]
+  |> List.map ~f:get_pair_to_analysed_str
+  |> Deferred.all
+  >>| List.iter ~f:(fun str -> printf "%s\n\n" str)
 
 let main () = get_pairs_to_analysed_str ()
 
