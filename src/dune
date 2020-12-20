@@ -16,5 +16,5 @@
  (name bbot)
  (preprocess
   (pps ppx_let))
- (modules bbot binance_t binance_j tools ta binance api)
+ (modules bbot binance_t binance_j tools ta binance api report)
  (libraries core async yojson uri textwrap cohttp-async atdgen-runtime))
