@@ -2,7 +2,7 @@ open Core
 open Base
 open Async
 
-let klines_req_to_report_entry (pair : string) (period : Report.period)
+let klines_req_to_report_entry (pair : string) (period : Report_t.period)
     (res : (Binance_t.kline list, string) Result.t) =
   res
   |> Result.bind ~f:(fun klines ->
@@ -13,7 +13,7 @@ let klines_req_to_report_entry (pair : string) (period : Report.period)
            |> Report.klines_analysed_to_report_entry pair period 4 ))
   |> return
 
-let get_klines_to_report_entry (pair : string) (period : Report.period) =
+let get_klines_to_report_entry (pair : string) (period : Report_t.period) =
   let url =
     "https://api.binance.com/api/v3/klines?symbol=" ^ pair ^ "&interval="
     ^ (period |> Report.period_to_string)
@@ -22,8 +22,8 @@ let get_klines_to_report_entry (pair : string) (period : Report.period) =
   >>= fun res -> res |> klines_req_to_report_entry pair period
 
 let get_pair_to_analysed_str (pair : string) =
-  let d1 = get_klines_to_report_entry pair Report.ONE_H in
-  let d2 = get_klines_to_report_entry pair Report.ONE_D in
+  let d1 = get_klines_to_report_entry pair `ONE_H in
+  let d2 = get_klines_to_report_entry pair `ONE_D in
   Deferred.all [ d1; d2 ]
   >>| List.map ~f:(function
         | Ok report_entry -> report_entry |> Report.report_entry_to_string
