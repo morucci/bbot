@@ -20,10 +20,12 @@ type x_report_entry = Report_t.x_report_entry = {
   macd: macd_report_entry
 }
 
+type x_report_entry_se = Report_t.x_report_entry_se
+
 type period = Report_t.period
 
 type report_entry = Report_t.report_entry = {
-  data: x_report_entry;
+  data: x_report_entry_se;
   pair: string;
   depth: int;
   period: period
@@ -707,6 +709,88 @@ let read_x_report_entry = (
 )
 let x_report_entry_of_string s =
   read_x_report_entry (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_x_report_entry_se = (
+  fun ob x ->
+    match x with
+      | `SUCCESS x ->
+        Bi_outbuf.add_string ob "[\"SUCCESS\",";
+        (
+          write_x_report_entry
+        ) ob x;
+        Bi_outbuf.add_char ob ']'
+      | `ERROR x ->
+        Bi_outbuf.add_string ob "[\"ERROR\",";
+        (
+          Yojson.Safe.write_string
+        ) ob x;
+        Bi_outbuf.add_char ob ']'
+)
+let string_of_x_report_entry_se ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_x_report_entry_se ob x;
+  Bi_outbuf.contents ob
+let read_x_report_entry_se = (
+  fun p lb ->
+    Yojson.Safe.read_space p lb;
+    match Yojson.Safe.start_any_variant p lb with
+      | `Edgy_bracket -> (
+          match Yojson.Safe.read_ident p lb with
+            | "SUCCESS" ->
+              Atdgen_runtime.Oj_run.read_until_field_value p lb;
+              let x = (
+                  read_x_report_entry
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `SUCCESS x
+            | "ERROR" ->
+              Atdgen_runtime.Oj_run.read_until_field_value p lb;
+              let x = (
+                  Atdgen_runtime.Oj_run.read_string
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `ERROR x
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
+        )
+      | `Double_quote -> (
+          match Yojson.Safe.finish_string p lb with
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
+        )
+      | `Square_bracket -> (
+          match Atdgen_runtime.Oj_run.read_string p lb with
+            | "SUCCESS" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_comma p lb;
+              Yojson.Safe.read_space p lb;
+              let x = (
+                  read_x_report_entry
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_rbr p lb;
+              `SUCCESS x
+            | "ERROR" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_comma p lb;
+              Yojson.Safe.read_space p lb;
+              let x = (
+                  Atdgen_runtime.Oj_run.read_string
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_rbr p lb;
+              `ERROR x
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
+        )
+)
+let x_report_entry_se_of_string s =
+  read_x_report_entry_se (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_period = (
   fun ob x ->
     match x with
@@ -761,7 +845,7 @@ let write_report_entry : _ -> report_entry -> _ = (
       Bi_outbuf.add_char ob ',';
     Bi_outbuf.add_string ob "\"data\":";
     (
-      write_x_report_entry
+      write_x_report_entry_se
     )
       ob x.data;
     if !is_first then
@@ -864,7 +948,7 @@ let read_report_entry = (
             field_data := (
               Some (
                 (
-                  read_x_report_entry
+                  read_x_report_entry_se
                 ) p lb
               )
             );
@@ -955,7 +1039,7 @@ let read_report_entry = (
               field_data := (
                 Some (
                   (
-                    read_x_report_entry
+                    read_x_report_entry_se
                   ) p lb
                 )
               );

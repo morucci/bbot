@@ -11,6 +11,8 @@ let klines_req_to_report_entry (pair : string) (period : Report_t.period)
            |> List.map ~f:(fun kline -> kline |> Binance.to_kline_record)
            |> Binance.run_ta_analysys
            |> Report.klines_analysed_to_report_entry pair period 4 ))
+  |> Result.map_error ~f:(fun err ->
+         Report.make_err_report_entry pair period 4 err)
   |> return
 
 let get_klines_to_report_entry (pair : string) (period : Report_t.period) =
@@ -27,7 +29,7 @@ let get_pair_to_analysed_str (pair : string) =
   Deferred.all [ d1; d2 ]
   >>| List.map ~f:(function
         | Ok report_entry -> report_entry |> Report.report_entry_to_string
-        | Error err -> sprintf "Error: %s" err)
+        | Error report_entry -> report_entry |> Report.report_entry_to_string)
   >>| String.concat ~sep:"\n"
 
 let get_pairs_to_analysed_str () =

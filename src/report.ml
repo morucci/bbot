@@ -77,14 +77,21 @@ let klines_analysed_to_report_entry (pair : string) (period : Report_t.period)
         macd = klines_a |> make_macd_report_entry depth;
       }
   in
-  Report_t.{ pair; period; depth; data }
+  Report_t.{ pair; period; depth; data = `SUCCESS data }
+
+let make_err_report_entry (pair : string) (period : Report_t.period)
+    (depth : int) (err : string) : Report_t.report_entry =
+  { data = `ERROR err; pair; depth; period }
 
 let report_entry_to_string (re : Report_t.report_entry) : string =
   let head = re.pair ^ "/" ^ (re.period |> period_to_string) ^ ": " in
-  let price_line =
-    head ^ (re.data.price |> price_report_entries_to_string re.depth)
-  in
-  let macd_line =
-    head ^ (re.data.macd |> macd_report_entry_to_string re.depth)
-  in
-  price_line ^ "\n" ^ macd_line
+  match re.data with
+  | `SUCCESS data ->
+      let price_line =
+        head ^ (data.price |> price_report_entries_to_string re.depth)
+      in
+      let macd_line =
+        head ^ (data.macd |> macd_report_entry_to_string re.depth)
+      in
+      price_line ^ "\n" ^ macd_line
+  | `ERROR err -> head ^ "An error occured: " ^ err
