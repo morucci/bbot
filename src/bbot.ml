@@ -39,16 +39,32 @@ let get_pairs_to_json_report filename =
   res |> List.concat |> Report_j.string_of_report |> fun contents ->
   Writer.save filename ~fsync:true ~contents
 
-let main () =
-  let report_file = "/tmp/report.json" in
+let round (report_file : string) =
   get_pairs_to_json_report report_file >>| fun _ ->
   Reader.file_contents report_file >>| fun contents ->
-  printf "%s"
+  print_endline
     ( Report_j.report_of_string contents
     |> List.map ~f:(fun re -> re |> Report.report_entry_to_string)
     |> String.concat ~sep:"\n" )
 
+let scheduler (report_file : string) (it_delay_secs : float) =
+  let delta = 3. in
+  let next_min_in =
+    Float.( - ) it_delay_secs (Float.mod_float (Unix.time ()) it_delay_secs)
+    +. delta
+  in
+  print_endline
+    ("Waiting " ^ (next_min_in |> Float.to_int |> Int.to_string) ^ " secs ...");
+  let start' = Unix.time () +. next_min_in in
+  let start = Time.Span.of_sec start' |> Time.of_span_since_epoch in
+  let stream = Clock.at_intervals ~start (Time.Span.of_sec it_delay_secs) in
+  stream
+  |> Stream.iter ~f:(fun _ ->
+         print_endline
+           ((Unix.time () |> Float.to_string) ^ ": Fetching and computing ...");
+         round report_file |> ignore)
+
 let () =
   (* Ta.IndicatorsTests.run_tests (); *)
-  main () |> ignore;
+  scheduler "/tmp/report.json" 60.;
   never_returns (Scheduler.go ())
