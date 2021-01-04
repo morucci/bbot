@@ -39,5 +39,5 @@
   (pps ppx_let))
  (modules bbot binance_t binance_j report_t report_j report_bs tools ta
    binance api report)
- (libraries core async yojson uri textwrap cohttp-async atdgen-runtime
-   atdgen-codec-runtime))
+ (libraries core async async_ssl yojson uri textwrap cohttp-async
+   atdgen-runtime atdgen-codec-runtime ppx_let))
