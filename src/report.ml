@@ -68,8 +68,9 @@ let macd_report_entry_to_string (depth : int) (mre : Report_t.macd_report_entry)
   ^ (mre.momentum |> gb_to_string)
   ^ "]"
 
-let klines_analysed_to_report_entry (pair : string) (period : Report_t.period)
-    (depth : int) (klines_a : Binance.klines_analysed) : Report_t.report_entry =
+let klines_analysed_to_report_entry (url : string) (pair : string)
+    (period : Report_t.period) (depth : int)
+    (klines_a : Binance.klines_analysed) : Report_t.report_entry =
   let data =
     Report_t.
       {
@@ -77,11 +78,12 @@ let klines_analysed_to_report_entry (pair : string) (period : Report_t.period)
         macd = klines_a |> make_macd_report_entry depth;
       }
   in
-  Report_t.{ pair; period; depth; data = `SUCCESS data }
+  Report_t.{ pair; period; depth; data = `SUCCESS data; url }
 
-let make_err_report_entry (pair : string) (period : Report_t.period)
-    (depth : int) (err : string) : Report_t.report_entry =
-  { data = `ERROR err; pair; depth; period }
+let make_err_report_entry (url : string) (pair : string)
+    (period : Report_t.period) (depth : int) (err : string) :
+    Report_t.report_entry =
+  { data = `ERROR err; pair; depth; period; url }
 
 let report_entry_to_string (re : Report_t.report_entry) : string =
   let head = re.pair ^ "/" ^ (re.period |> period_to_string) ^ ": " in
@@ -95,3 +97,6 @@ let report_entry_to_string (re : Report_t.report_entry) : string =
       in
       price_line ^ "\n" ^ macd_line
   | `ERROR err -> head ^ "An error occured: " ^ err
+
+let make_report (report : Report_t.report_entry list) =
+  Report_t.{ report; epoch = Unix.time () }

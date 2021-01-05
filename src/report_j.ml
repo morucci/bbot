@@ -27,11 +27,12 @@ type period = Report_t.period
 type report_entry = Report_t.report_entry = {
   data: x_report_entry_se;
   pair: string;
+  url: string;
   depth: int;
   period: period
 }
 
-type report = Report_t.report
+type report = Report_t.report = { report: report_entry list; epoch: float }
 
 let write__1 = (
   Atdgen_runtime.Oj_run.write_list (
@@ -861,6 +862,15 @@ let write_report_entry : _ -> report_entry -> _ = (
       is_first := false
     else
       Bi_outbuf.add_char ob ',';
+    Bi_outbuf.add_string ob "\"url\":";
+    (
+      Yojson.Safe.write_string
+    )
+      ob x.url;
+    if !is_first then
+      is_first := false
+    else
+      Bi_outbuf.add_char ob ',';
     Bi_outbuf.add_string ob "\"depth\":";
     (
       Yojson.Safe.write_int
@@ -887,6 +897,7 @@ let read_report_entry = (
     Yojson.Safe.read_lcurl p lb;
     let field_data = ref (None) in
     let field_pair = ref (None) in
+    let field_url = ref (None) in
     let field_depth = ref (None) in
     let field_period = ref (None) in
     try
@@ -898,6 +909,14 @@ let read_report_entry = (
           if pos < 0 || len < 0 || pos + len > String.length s then
             invalid_arg "out-of-bounds substring position or length";
           match len with
+            | 3 -> (
+                if String.unsafe_get s pos = 'u' && String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'l' then (
+                  2
+                )
+                else (
+                  -1
+                )
+              )
             | 4 -> (
                 match String.unsafe_get s pos with
                   | 'd' -> (
@@ -922,7 +941,7 @@ let read_report_entry = (
               )
             | 5 -> (
                 if String.unsafe_get s pos = 'd' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'p' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = 'h' then (
-                  2
+                  3
                 )
                 else (
                   -1
@@ -930,7 +949,7 @@ let read_report_entry = (
               )
             | 6 -> (
                 if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'i' && String.unsafe_get s (pos+4) = 'o' && String.unsafe_get s (pos+5) = 'd' then (
-                  3
+                  4
                 )
                 else (
                   -1
@@ -961,6 +980,14 @@ let read_report_entry = (
               )
             );
           | 2 ->
+            field_url := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_string
+                ) p lb
+              )
+            );
+          | 3 ->
             field_depth := (
               Some (
                 (
@@ -968,7 +995,7 @@ let read_report_entry = (
                 ) p lb
               )
             );
-          | 3 ->
+          | 4 ->
             field_period := (
               Some (
                 (
@@ -989,6 +1016,14 @@ let read_report_entry = (
             if pos < 0 || len < 0 || pos + len > String.length s then
               invalid_arg "out-of-bounds substring position or length";
             match len with
+              | 3 -> (
+                  if String.unsafe_get s pos = 'u' && String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'l' then (
+                    2
+                  )
+                  else (
+                    -1
+                  )
+                )
               | 4 -> (
                   match String.unsafe_get s pos with
                     | 'd' -> (
@@ -1013,7 +1048,7 @@ let read_report_entry = (
                 )
               | 5 -> (
                   if String.unsafe_get s pos = 'd' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'p' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = 'h' then (
-                    2
+                    3
                   )
                   else (
                     -1
@@ -1021,7 +1056,7 @@ let read_report_entry = (
                 )
               | 6 -> (
                   if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'i' && String.unsafe_get s (pos+4) = 'o' && String.unsafe_get s (pos+5) = 'd' then (
-                    3
+                    4
                   )
                   else (
                     -1
@@ -1052,6 +1087,14 @@ let read_report_entry = (
                 )
               );
             | 2 ->
+              field_url := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_string
+                  ) p lb
+                )
+              );
+            | 3 ->
               field_depth := (
                 Some (
                   (
@@ -1059,7 +1102,7 @@ let read_report_entry = (
                   ) p lb
                 )
               );
-            | 3 ->
+            | 4 ->
               field_period := (
                 Some (
                   (
@@ -1078,6 +1121,7 @@ let read_report_entry = (
           {
             data = (match !field_data with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "data");
             pair = (match !field_pair with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "pair");
+            url = (match !field_url with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "url");
             depth = (match !field_depth with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "depth");
             period = (match !field_period with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "period");
           }
@@ -1102,15 +1146,156 @@ let read__3 = (
 )
 let _3_of_string s =
   read__3 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write_report = (
-  write__3
+let write_report : _ -> report -> _ = (
+  fun ob (x : report) ->
+    Bi_outbuf.add_char ob '{';
+    let is_first = ref true in
+    if !is_first then
+      is_first := false
+    else
+      Bi_outbuf.add_char ob ',';
+    Bi_outbuf.add_string ob "\"report\":";
+    (
+      write__3
+    )
+      ob x.report;
+    if !is_first then
+      is_first := false
+    else
+      Bi_outbuf.add_char ob ',';
+    Bi_outbuf.add_string ob "\"epoch\":";
+    (
+      Yojson.Safe.write_std_float
+    )
+      ob x.epoch;
+    Bi_outbuf.add_char ob '}';
 )
 let string_of_report ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
   write_report ob x;
   Bi_outbuf.contents ob
 let read_report = (
-  read__3
+  fun p lb ->
+    Yojson.Safe.read_space p lb;
+    Yojson.Safe.read_lcurl p lb;
+    let field_report = ref (None) in
+    let field_epoch = ref (None) in
+    try
+      Yojson.Safe.read_space p lb;
+      Yojson.Safe.read_object_end lb;
+      Yojson.Safe.read_space p lb;
+      let f =
+        fun s pos len ->
+          if pos < 0 || len < 0 || pos + len > String.length s then
+            invalid_arg "out-of-bounds substring position or length";
+          match len with
+            | 5 -> (
+                if String.unsafe_get s pos = 'e' && String.unsafe_get s (pos+1) = 'p' && String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 'c' && String.unsafe_get s (pos+4) = 'h' then (
+                  1
+                )
+                else (
+                  -1
+                )
+              )
+            | 6 -> (
+                if String.unsafe_get s pos = 'r' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'p' && String.unsafe_get s (pos+3) = 'o' && String.unsafe_get s (pos+4) = 'r' && String.unsafe_get s (pos+5) = 't' then (
+                  0
+                )
+                else (
+                  -1
+                )
+              )
+            | _ -> (
+                -1
+              )
+      in
+      let i = Yojson.Safe.map_ident p f lb in
+      Atdgen_runtime.Oj_run.read_until_field_value p lb;
+      (
+        match i with
+          | 0 ->
+            field_report := (
+              Some (
+                (
+                  read__3
+                ) p lb
+              )
+            );
+          | 1 ->
+            field_epoch := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_number
+                ) p lb
+              )
+            );
+          | _ -> (
+              Yojson.Safe.skip_json p lb
+            )
+      );
+      while true do
+        Yojson.Safe.read_space p lb;
+        Yojson.Safe.read_object_sep p lb;
+        Yojson.Safe.read_space p lb;
+        let f =
+          fun s pos len ->
+            if pos < 0 || len < 0 || pos + len > String.length s then
+              invalid_arg "out-of-bounds substring position or length";
+            match len with
+              | 5 -> (
+                  if String.unsafe_get s pos = 'e' && String.unsafe_get s (pos+1) = 'p' && String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 'c' && String.unsafe_get s (pos+4) = 'h' then (
+                    1
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | 6 -> (
+                  if String.unsafe_get s pos = 'r' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'p' && String.unsafe_get s (pos+3) = 'o' && String.unsafe_get s (pos+4) = 'r' && String.unsafe_get s (pos+5) = 't' then (
+                    0
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | _ -> (
+                  -1
+                )
+        in
+        let i = Yojson.Safe.map_ident p f lb in
+        Atdgen_runtime.Oj_run.read_until_field_value p lb;
+        (
+          match i with
+            | 0 ->
+              field_report := (
+                Some (
+                  (
+                    read__3
+                  ) p lb
+                )
+              );
+            | 1 ->
+              field_epoch := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_number
+                  ) p lb
+                )
+              );
+            | _ -> (
+                Yojson.Safe.skip_json p lb
+              )
+        );
+      done;
+      assert false;
+    with Yojson.End_of_object -> (
+        (
+          {
+            report = (match !field_report with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "report");
+            epoch = (match !field_epoch with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "epoch");
+          }
+         : report)
+      )
 )
 let report_of_string s =
   read_report (Yojson.Safe.init_lexer ()) (Lexing.from_string s)

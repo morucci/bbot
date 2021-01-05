@@ -27,11 +27,12 @@ type period = Report_t.period
 type report_entry = Report_t.report_entry = {
   data: x_report_entry_se;
   pair: string;
+  url: string;
   depth: int;
   period: period
 }
 
-type report = Report_t.report
+type report = Report_t.report = { report: report_entry list; epoch: float }
 
 val write_price_report_entry :
   Bi_outbuf.t -> price_report_entry -> unit
