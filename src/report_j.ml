@@ -9,9 +9,11 @@ type macd_entry = Report_t.macd_entry = { diff: float; macd_line: float }
 
 type gb = Report_t.gb
 
+type cs = Report_t.cs
+
 type macd_report_entry = Report_t.macd_report_entry = {
   periods: macd_entry list;
-  cs: int;
+  cs: cs;
   momentum: gb
 }
 
@@ -345,6 +347,88 @@ let read_gb = (
 )
 let gb_of_string s =
   read_gb (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_cs = (
+  fun ob x ->
+    match x with
+      | `UP x ->
+        Bi_outbuf.add_string ob "[\"UP\",";
+        (
+          Yojson.Safe.write_int
+        ) ob x;
+        Bi_outbuf.add_char ob ']'
+      | `DOWN x ->
+        Bi_outbuf.add_string ob "[\"DOWN\",";
+        (
+          Yojson.Safe.write_int
+        ) ob x;
+        Bi_outbuf.add_char ob ']'
+)
+let string_of_cs ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_cs ob x;
+  Bi_outbuf.contents ob
+let read_cs = (
+  fun p lb ->
+    Yojson.Safe.read_space p lb;
+    match Yojson.Safe.start_any_variant p lb with
+      | `Edgy_bracket -> (
+          match Yojson.Safe.read_ident p lb with
+            | "UP" ->
+              Atdgen_runtime.Oj_run.read_until_field_value p lb;
+              let x = (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `UP x
+            | "DOWN" ->
+              Atdgen_runtime.Oj_run.read_until_field_value p lb;
+              let x = (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `DOWN x
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
+        )
+      | `Double_quote -> (
+          match Yojson.Safe.finish_string p lb with
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
+        )
+      | `Square_bracket -> (
+          match Atdgen_runtime.Oj_run.read_string p lb with
+            | "UP" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_comma p lb;
+              Yojson.Safe.read_space p lb;
+              let x = (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_rbr p lb;
+              `UP x
+            | "DOWN" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_comma p lb;
+              Yojson.Safe.read_space p lb;
+              let x = (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_rbr p lb;
+              `DOWN x
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
+        )
+)
+let cs_of_string s =
+  read_cs (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write__2 = (
   Atdgen_runtime.Oj_run.write_list (
     write_macd_entry
@@ -380,7 +464,7 @@ let write_macd_report_entry : _ -> macd_report_entry -> _ = (
       Bi_outbuf.add_char ob ',';
     Bi_outbuf.add_string ob "\"cs\":";
     (
-      Yojson.Safe.write_int
+      write_cs
     )
       ob x.cs;
     if !is_first then
@@ -458,7 +542,7 @@ let read_macd_report_entry = (
             field_cs := (
               Some (
                 (
-                  Atdgen_runtime.Oj_run.read_int
+                  read_cs
                 ) p lb
               )
             );
@@ -527,7 +611,7 @@ let read_macd_report_entry = (
               field_cs := (
                 Some (
                   (
-                    Atdgen_runtime.Oj_run.read_int
+                    read_cs
                   ) p lb
                 )
               );

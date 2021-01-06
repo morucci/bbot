@@ -26,18 +26,11 @@
  (action
   (run atdgen -t %{deps})))
 
-(rule
- (targets report_bs.ml report_bs.mli)
- (deps report.atd)
- (mode fallback)
- (action
-  (run atdgen -bs %{deps})))
-
 (executable
  (name bbot)
  (preprocess
   (pps ppx_let))
- (modules bbot binance_t binance_j report_t report_j report_bs tools ta
-   binance api report)
+ (modules bbot binance_t binance_j report_t report_j tools ta binance api
+   report)
  (libraries core async async_ssl yojson uri textwrap cohttp-async
    atdgen-runtime atdgen-codec-runtime ppx_let))

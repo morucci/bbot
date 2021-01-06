@@ -9,6 +9,11 @@ let period_to_string (period : Report_t.period) : string =
 let gb_to_string (gb : Report_t.gb) : string =
   gb |> function `GOOD -> "GOOD" | `BAD -> "BAD"
 
+let cs_to_string (cs : Report_t.cs) : string =
+  cs |> function
+  | `UP cs -> "UP(" ^ (cs |> string_of_int) ^ ")"
+  | `DOWN cs -> "DOWN(" ^ (cs |> string_of_int) ^ ")"
+
 let get_bounces (depth : int) (klines_a : Binance.klines_analysed) : int * int =
   let s = (klines_a.klines |> List.length) - depth in
   let n = klines_a.klines |> List.length in
@@ -48,6 +53,10 @@ let make_macd_report_entry (depth : int) (klines_a : Binance.klines_analysed) :
       last_macd_diff last_macd
   in
   let cs = klines_a.macd_diff |> Binance.compute_last_crossed_since in
+  let cs =
+    if Float.( >= ) (klines_a.macd_diff |> List.last_exn) 0. then `UP cs
+    else `DOWN cs
+  in
   let momentum = klines_a |> macd_momentum_gb in
   { periods; cs; momentum }
 
@@ -64,7 +73,7 @@ let macd_report_entry_to_string (depth : int) (mre : Report_t.macd_report_entry)
              ^ " L: "
              ^ (Report_t.(p.macd_line) |> float_to_string)
              ^ "]") )
-  ^ " [" ^ (mre.cs |> Int.to_string) ^ "]" ^ " ["
+  ^ " [" ^ (mre.cs |> cs_to_string) ^ "]" ^ " ["
   ^ (mre.momentum |> gb_to_string)
   ^ "]"
 

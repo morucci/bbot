@@ -9,9 +9,11 @@ type macd_entry = Report_t.macd_entry = { diff: float; macd_line: float }
 
 type gb = Report_t.gb
 
+type cs = Report_t.cs
+
 type macd_report_entry = Report_t.macd_report_entry = {
   periods: macd_entry list;
-  cs: int;
+  cs: cs;
   momentum: gb
 }
 
@@ -93,6 +95,26 @@ val read_gb :
 val gb_of_string :
   string -> gb
   (** Deserialize JSON data of type {!gb}. *)
+
+val write_cs :
+  Bi_outbuf.t -> cs -> unit
+  (** Output a JSON value of type {!cs}. *)
+
+val string_of_cs :
+  ?len:int -> cs -> string
+  (** Serialize a value of type {!cs}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_cs :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> cs
+  (** Input JSON data of type {!cs}. *)
+
+val cs_of_string :
+  string -> cs
+  (** Deserialize JSON data of type {!cs}. *)
 
 val write_macd_report_entry :
   Bi_outbuf.t -> macd_report_entry -> unit
