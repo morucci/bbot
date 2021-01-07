@@ -9,26 +9,28 @@ let klines_req_to_report_entry (url : string) (pair : string)
   |> Result.bind ~f:(fun klines ->
          Ok
            ( klines
-           |> List.map ~f:(fun kline -> kline |> Binance.to_kline_record)
-           |> Binance.run_ta_analysys
-           |> Report.klines_analysed_to_report_entry url pair period 4 ))
+           |> List.map ~f:(fun kline ->
+                  kline |> Binance.KFetcher.to_kline_record)
+           |> Ta.KAnalyser.run_ta_analysys
+           |> Report.Generator.klines_a_to_report_entry url pair period 4 ))
   |> Result.map_error ~f:(fun err ->
-         Report.make_err_report_entry url pair period 4 err)
+         Report.Generator.make_err_report_entry url pair period 4 err)
   |> function
   | Ok report_entry -> report_entry
   | Error report_entry -> report_entry
 
-let get_klines_to_report_entry (pair : string) (period : Report_t.period) =
-  let url =
-    "https://api.binance.com/api/v3/klines?symbol=" ^ pair ^ "&interval="
-    ^ (period |> Report.period_to_string)
-  in
-  let tracker_pairurl =
-    "https://www.binance.com/fr/trade/" ^ pair ^ "?layout=pro"
-  in
-  Api.get_with_timeout url Binance_j.klines_of_string ~timeout:10.0
+let get_klines_to_report_entry (pair : string) (period : Report_t.period) :
+    Report_t.report_entry Deferred.t =
+  let period_str = period |> Report.Generator.Stringify.period_to_string in
+  Api.get_with_timeout
+    (Binance.KFetcher.get_pair_url pair period_str)
+    Binance_j.klines_of_string ~timeout:10.0
   >>= fun res ->
-  res |> klines_req_to_report_entry tracker_pairurl pair period |> return
+  res
+  |> klines_req_to_report_entry
+       (Binance.KFetcher.get_tracker_pair_url pair)
+       pair period
+  |> return
 
 let get_pair_to_report_entries (pair : string) :
     Report_t.report_entry list Deferred.t =
@@ -36,36 +38,13 @@ let get_pair_to_report_entries (pair : string) :
   let d2 = get_klines_to_report_entry pair `ONE_D in
   Deferred.all [ d1; d2 ]
 
-let pair_list =
-  [
-    "BTCUSDT";
-    "ETHUSDT";
-    "LTCUSDT";
-    "XRPUSDT";
-    "DOTUSDT";
-    "ADAUSDT";
-    "BCHUSDT";
-    "BNBUSDT";
-    "LINKUSDT";
-    "XLMUSDT";
-    "EOSUSDT";
-    "XMRUSDT";
-    "THETAUSDT";
-    "TRXUSDT";
-    "XEMUSDT";
-    "VETUSDT";
-    "XTZUSDT";
-    "UNIUSDT";
-    "AAVEUSDT";
-    "SNXUSDT";
-  ]
-
 let get_pairs_to_json_report filename =
-  pair_list |> List.rev
+  Binance.KFetcher.pair_list |> List.rev
   |> List.map ~f:get_pair_to_report_entries
   |> Deferred.all
   >>= fun res ->
-  res |> List.concat |> Report.make_report |> Report_j.string_of_report
+  res |> List.concat |> Report.Generator.make_report
+  |> Report_j.string_of_report
   |> fun contents -> Writer.save filename ~fsync:true ~contents
 
 let round (report_file : string) =
@@ -73,7 +52,8 @@ let round (report_file : string) =
   Reader.file_contents report_file >>| fun contents ->
   print_endline
     ( (Report_j.report_of_string contents).report
-    |> List.map ~f:(fun re -> re |> Report.report_entry_to_string)
+    |> List.map ~f:(fun re ->
+           re |> Report.Generator.Stringify.report_entry_to_string)
     |> String.concat ~sep:"\n" )
 
 let scheduler (report_file : string) (it_delay_secs : float) =

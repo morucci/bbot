@@ -1,5 +1,10 @@
 open Base
 
+let get_bounces (depth : int) (l : 'a list) : int * int =
+  let s = (l |> List.length) - depth in
+  let n = l |> List.length in
+  (s, n)
+
 let slice (l : 'a list) i k =
   let r = List.drop l i |> List.rev in
   List.drop r ((l |> List.length) - k - 1) |> List.rev
