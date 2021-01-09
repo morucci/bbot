@@ -61,4 +61,12 @@ module KFetcher = struct
       (get_pair_url pair period_str)
       Binance_j.klines_of_string ~timeout:10.0
     >>= fun res -> res |> klines_req_to_taklines |> return
+
+  let interface =
+    Provider.
+      {
+        pairs = pair_list;
+        tracker_url = get_tracker_pair_url;
+        fetcher = get_klines;
+      }
 end
